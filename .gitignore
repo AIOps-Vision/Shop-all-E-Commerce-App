@@ -1,0 +1,54 @@
+# ─── FLUTTER & DART ───────────────────────────────────────
+src/.dart_tool/
+src/.flutter-plugins
+src/.flutter-plugins-dependencies
+src/.packages
+src/.pub-cache/
+src/.pub/
+src/build/
+**/ios/Flutter/.last_build_id
+
+# ─── ANDROID ──────────────────────────────────────────────
+src/android/.gradle/
+src/android/app/debug/
+src/android/app/profile/
+src/android/app/release/
+
+# ─── IOS ──────────────────────────────────────────────────
+src/ios/Pods/
+
+# ─── SYMBOLICATION / OBFUSCATION ──────────────────────────
+src/app.*.symbols
+src/app.*.map.json
+
+# ─── IDEs ─────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ─── SYSTEM FILES ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── SECRETS ──────────────────────────────────────────────
+**/*.pem
+**/*.key
+**/*.crt
+**/*.env
+**/secrets/
+
+# ─── MISCELLANEOUS ────────────────────────────────────────
+*.class
+*.log
+*.pyc
+*.swp
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# ─── FLUTTER GENERATED DOCS ───────────────────────────────
+**/doc/api/
