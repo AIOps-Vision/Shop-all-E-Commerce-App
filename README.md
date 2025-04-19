@@ -6,13 +6,18 @@
 
 *Not actively maintained, but preserved for educational purposes.*
 ## ✨ Features
-
 - Category-based service browser (food, health, cars, etc.)
 - Smart search for each section
 - Item addition interface for vendors
 - Secure login & sign-up
 - Role selection (classification + place)
 - Bottom navigation bar for intuitive navigation
+
+## 🔖 Versioning
+This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`  
+- **MAJOR**: Breaking changes  
+- **MINOR**: New features (backward compatible)  
+- **PATCH**: Bug fixes or small enhancements
 
 ## 📦 Tech Stack
 - Flutter 3
