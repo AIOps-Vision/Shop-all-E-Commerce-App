@@ -1,0 +1,272 @@
+name: Flutter Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-android:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write 
+    steps:
+      # First just check out code without token
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      # Determine which repository we're in
+      - name: Determine Repository Type
+        id: repo-check
+        run: |
+          if [[ "${{ github.repository }}" == "WahbaMousa-DevOps/Shop-all-E-Commerce-App" ]]; then
+            echo "is_main_repo=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_main_repo=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull LFS objects
+        run: git lfs pull
+
+      - name: Set up Git for Main Repo
+        if: steps.repo-check.outputs.is_main_repo == 'true'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          # Configure with main repo token
+          git remote set-url origin https://x-access-token:${{ secrets.UPSTREAM_TOKENN }}@github.com/${{ github.repository }}.git
+
+      - name: Set up Git for Fork Repo
+        if: steps.repo-check.outputs.is_main_repo != 'true'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          # Configure with fork token
+          git remote set-url origin https://x-access-token:${{ secrets.UPSTREAM_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: src
+
+      - name: Build Android APK
+        run: |
+          cd src
+          flutter build apk --release
+
+      - name: Set Release Version for Main Repo
+        id: version-main
+        if: steps.repo-check.outputs.is_main_repo == 'true'
+        run: |
+          echo "Checking commit message for version type..."
+          COMMIT_MSG="${{ github.event.head_commit.message || '' }}"
+          PR_TITLE="${{ github.event.pull_request.title || '' }}"
+          
+          COMMIT_TEXT="$COMMIT_MSG $PR_TITLE"
+          
+          if [[ "$COMMIT_TEXT" == *"MAJOR"* ]]; then
+            VERSION_TYPE="major"
+          elif [[ "$COMMIT_TEXT" == *"MINOR"* ]]; then
+            VERSION_TYPE="minor"
+          else
+            VERSION_TYPE="patch"
+          fi 
+          
+          echo "Detected version type: $VERSION_TYPE"
+          
+          # Fetch tags
+          git fetch --tags || true
+          
+          # Get latest tag
+          LATEST_TAG=$(git tag -l "v*.*.*" | sort -V | tail -n 1)
+          
+          echo "Latest tag found: $LATEST_TAG"
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags found. Starting at v1.0.0"
+            NEXT_VERSION="v1.0.0"
+          else
+            # Extract version parts
+            if [[ $LATEST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+              MAJOR="${BASH_REMATCH[1]}"
+              MINOR="${BASH_REMATCH[2]}"
+              PATCH="${BASH_REMATCH[3]}"
+            else
+              MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
+              MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+              PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+            fi
+
+            case $VERSION_TYPE in
+              major)
+                MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+              minor)
+                MINOR=$((MINOR + 1)); PATCH=0 ;;
+              patch)
+                PATCH=$((PATCH + 1)) ;;
+            esac
+
+            NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+          fi
+
+          echo "New version: $NEXT_VERSION"
+          echo "RELEASE_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set Release Version for Fork Repo
+        id: version-fork
+        if: steps.repo-check.outputs.is_main_repo != 'true'
+        run: |
+          echo "Checking commit message for version type..."
+          COMMIT_MSG="${{ github.event.head_commit.message || '' }}"
+          PR_TITLE="${{ github.event.pull_request.title || '' }}"
+          
+          COMMIT_TEXT="$COMMIT_MSG $PR_TITLE"
+          
+          if [[ "$COMMIT_TEXT" == *"MAJOR"* ]]; then
+            VERSION_TYPE="major"
+          elif [[ "$COMMIT_TEXT" == *"MINOR"* ]]; then
+            VERSION_TYPE="minor"
+          else
+            VERSION_TYPE="patch"
+          fi 
+          
+          echo "Detected version type: $VERSION_TYPE"
+          
+          # Add upstream remote to get tags from main repo
+          MAIN_REPO="WahbaMousa-DevOps/Shop-all-E-Commerce-App"
+          if ! git remote | grep -q "upstream"; then
+            git remote add upstream https://github.com/${MAIN_REPO}.git || true
+          fi
+          
+          # Fetch tags from both origin and upstream
+          git fetch --tags || true 
+          git fetch upstream --tags || true
+          
+          # Get latest tag
+          LATEST_TAG=$(git tag -l "v*.*.*" | sort -V | tail -n 1)
+          
+          echo "Latest tag found: $LATEST_TAG"
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags found. Starting at v1.0.0"
+            NEXT_VERSION="v1.0.0"
+          else
+            # Extract version parts
+            if [[ $LATEST_TAG =~ v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+              MAJOR="${BASH_REMATCH[1]}"
+              MINOR="${BASH_REMATCH[2]}"
+              PATCH="${BASH_REMATCH[3]}"
+            else
+              MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
+              MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+              PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+            fi
+
+            case $VERSION_TYPE in
+              major)
+                MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+              minor)
+                MINOR=$((MINOR + 1)); PATCH=0 ;;
+              patch)
+                PATCH=$((PATCH + 1)) ;;
+            esac
+
+            NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+          fi
+
+          echo "New version: $NEXT_VERSION"
+          echo "RELEASE_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      # Create a tag for the version in main repo
+      - name: Create Git Tag in Main Repo
+        if: |
+          steps.repo-check.outputs.is_main_repo == 'true' && 
+          github.event_name == 'push' && 
+          github.ref == 'refs/heads/main'
+        run: |
+          git tag ${{ steps.version-main.outputs.version }}
+          git push origin ${{ steps.version-main.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.UPSTREAM_TOKENN }}
+
+      # Create a tag for the version in fork
+      - name: Create Git Tag in Fork
+        if: |
+          steps.repo-check.outputs.is_main_repo != 'true' && 
+          github.event_name == 'push' && 
+          github.ref == 'refs/heads/main'
+        run: |
+          git tag ${{ steps.version-fork.outputs.version }}
+          git push origin ${{ steps.version-fork.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+
+      # Create GitHub release in main repo
+      - name: Create GitHub Release in Main Repo
+        if: |
+          steps.repo-check.outputs.is_main_repo == 'true' && 
+          github.event_name == 'push' && 
+          github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.UPSTREAM_TOKENN }}
+        with:
+          files: |
+            src/build/app/outputs/flutter-apk/*.apk
+          tag_name: ${{ steps.version-main.outputs.version }}
+          name: Release ${{ steps.version-main.outputs.version }}
+          body: |
+            ## Release ${{ steps.version-main.outputs.version }}
+            
+            Automated release created at: ${{ github.event.head_commit.timestamp || github.event.pull_request.updated_at }}
+            
+            ### Changes in this release:
+            ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          draft: false
+          prerelease: false
+          
+      # Create GitHub release in fork
+      - name: Create GitHub Release in Fork
+        if: |
+          steps.repo-check.outputs.is_main_repo != 'true' && 
+          github.event_name == 'push' && 
+          github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+        with:
+          files: |
+            src/build/app/outputs/flutter-apk/*.apk
+          tag_name: ${{ steps.version-fork.outputs.version }}
+          name: Release ${{ steps.version-fork.outputs.version }} (Fork)
+          body: |
+            ## Fork Release ${{ steps.version-fork.outputs.version }}
+            
+            Automated release created in fork at: ${{ github.event.head_commit.timestamp || github.event.pull_request.updated_at }}
+            
+            ### Changes in this release:
+            ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          draft: false
+          prerelease: false
