@@ -69,10 +69,22 @@ jobs:
         run: flutter pub get
         working-directory: src
 
+      - name: Optimize PNG assets
+        run: |
+          sudo apt-get update && sudo apt-get install -y pngquant
+          find src/assets -name "*.png" -exec pngquant --force --ext .png --quality=65-80 {} \;
+        continue-on-error: true
+
       - name: Build Android APK
         run: |
           cd src
-          flutter build apk --release
+          flutter build apk --release \
+            --split-per-abi \
+            --obfuscate \
+            --split-debug-info=../build/debug-info
+
+      - name: Check APK Size
+        run: ls -lh src/build/app/outputs/flutter-apk/*.apk
 
       - name: Set Release Version for Main Repo
         id: version-main
