@@ -281,3 +281,11 @@ jobs:
             ${{ github.event.head_commit.message || github.event.pull_request.title }}
           draft: false
           prerelease: false
+
+
+
+       # - name: Upload APK as Artifact
+       #    uses: actions/upload-artifact@v4
+       #    with:
+       #      name: release-apk
+       #      path: src/build/app/outputs/flutter-apk/*.apk
