@@ -1,4 +1,12 @@
-# 🛍️ Shop_All – Flutter E-Commerce Directory App
+# 🛍️ Shop_All: Flutter E-Commerce Directory App
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Flutter Version](https://img.shields.io/badge/Flutter-v3-blue)](https://flutter.dev)
+[![Project Status](https://img.shields.io/badge/status-beta-orange)](https://github.com/AIOps-Vision/Shop-all-E-Commerce-App)
+
+## 📺 App Demo  
+[![Demo Video Thumbnail](https://img.shields.io/badge/Watch-Demo_Video-red)](https://youtu.be/L8geDcoMSqU])  
+*(Click the badge above to see the app in Video!)*
 
 **A multi-category Flutter app for browsing, adding, and managing local service providers and shops. Built with a clean UI and role-based logic.**
 
@@ -23,15 +31,6 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - Flutter 3
 - GitHub Actions
 - Open Source (MIT License)
-
-# [Project Name] (Beta/Legacy Project) 🚀
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Flutter Version](https://img.shields.io/badge/Flutter-v3-blue)](https://flutter.dev)
-[![Project Status](https://img.shields.io/badge/status-beta-orange)](https://github.com/AIOps-Vision/Shop-all-E-Commerce-App)
-
-## 📺 Video Demo  
-[![Demo Video Thumbnail](https://img.shields.io/badge/Watch-Demo_Video-red)](https://youtu.be/L8geDcoMSqU])  
-*(Click the badge above to see the app in Video!)*
 
 ## 🚧 About This Project  
 This repository contains a **beta-version Flutter app** built in [2019] as a personal experiment to explore Flutter’s early capabilities.  
